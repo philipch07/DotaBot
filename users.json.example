@@ -1,0 +1,12 @@
+{
+    "server_info" : {
+        "123discordID123" : {
+            "steamID" : "123steamID123",
+            "favhero" : "dog"
+        },
+        "1234discord1234" : {
+            "steamID" : "1234steam1234",
+            "favhero" : "cat"
+        }
+    }
+}
