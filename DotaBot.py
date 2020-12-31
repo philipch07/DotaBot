@@ -56,6 +56,11 @@ def convertTime(epoch):
     return f"{time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(epoch))}"
 
 
+# grabs hero name from heroes.json
+def getHero(hero_id):
+    return heroes[str(hero_id)]['localized_name']
+
+
 class MyClient(discord.Client):
     api_url = 'https://api.opendota.com/api'
     key_suffix = f'?api_key={api_key}'
@@ -111,7 +116,9 @@ class MyClient(discord.Client):
                 await message.channel.send('User not set. Use `!setUser xxxxx` to set your steamID.')
             else:
                 steam_id = users[str(message.author.id)]
-                # 1 API CALL HERE
+                ###################
+                # 1 API CALL HERE #
+                ###################
                 endpoint = f'/players/{steam_id}/recentMatches'
                 url = self.api_url + endpoint + self.key_suffix
                 response = json.loads(requests.get(url).text)
@@ -120,18 +127,20 @@ class MyClient(discord.Client):
                 match_id = response[0]['match_id']
 
                 # general text field
-                # TODO: change the hero jawn to a function instead
                 duration = int(f"{response[0]['duration']}")
+                dur = f"{int(duration/60)}:{duration%60}"
                 general = f""" Time: {convertTime(response[0]['start_time'])}
-                               Duration: {int(duration/60)}:{duration%60}, Party Size: {response[0]['party_size']}
-                               Hero: {heroes[str(response[0]['hero_id'])]['localized_name']}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}"""
+                               Duration: {dur}, Party Size: {response[0]['party_size']}
+                               {getHero(response[0]['hero_id'])}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}"""
 
                 # the message to be sent
                 # randomizing the embed color
                 c = random.randint(0, 0xFFFFFF)
                 embedVar = discord.Embed(title=f"{response[0]['match_id']}", description=general, color=c)
 
-                # 1 API CALL HERE
+                ###################
+                # 1 API CALL HERE #
+                ###################
                 endpoint = f'/matches/{match_id}'
                 url = self.api_url + endpoint + self.key_suffix
                 response = json.loads(requests.get(url).text)
@@ -176,7 +185,12 @@ class MyClient(discord.Client):
                               Pings: {p['pings']}"""
 
                 # adding on the player text as an additional field
-                embedVar.add_field(name="Match Information", value=player, inline=False)
+                embedVar.add_field(name="Player Information", value=player, inline=False)
+
+                links = f""" https://www.dotabuff.com/matches/{match_id}
+                             https://www.opendota.com/matches/{match_id}"""
+
+                embedVar.add_field(name="Links", value=links, inline=False)
                 await message.channel.send(embed=embedVar)
         # end of !lastMatch command
 
