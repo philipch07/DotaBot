@@ -24,8 +24,13 @@ except FileNotFoundError:
 
 
 def loadJsonFile(serverID):
-    with open('users.json', 'r') as f:
-        temp = json.load(f)
+    temp = {}
+    try:
+        with open('users.json', 'r') as f:
+            temp = json.load(f)
+    except FileNotFoundError:
+        with open('users.json', 'w') as f:
+            json.dump({}, f)
     if serverID not in temp.keys():
         temp[serverID] = {}
     users = temp[serverID]
