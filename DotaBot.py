@@ -46,9 +46,9 @@ def writeJsonFile(serverID, users):
     with open('users.json', 'w') as f:
         json.dump(temp, f)
 
-    # TODO: for time rate limiting
-    # lim_min = 0
-    # lim_mon = 0
+# TODO: for time rate limiting
+# lim_min = 0
+# lim_mon = 0
 
 
 # converts time from epoch/unix time
@@ -81,14 +81,13 @@ class MyClient(discord.Client):
             # randomizing the embed color
             c = random.randint(0, 0xFFFFFF)
 
-            dota = "help"
+            # decription of the commands
             setUser = "Used to set your SteamID. Make sure it matches your Dotabuff/OpenDota ID. Note that it must be set once per server."
             lastMatch = "Provides details of your last match."
 
             # create the embed
             embedVar = discord.Embed(title="Commands:", color=c)
             # Adds the commands
-            embedVar.add_field(name="!dota", value=dota, inline=False)
             embedVar.add_field(name="!setUser", value=setUser, inline=False)
             embedVar.add_field(name="!lastMatch", value=lastMatch, inline=False)
 
