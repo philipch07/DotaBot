@@ -57,7 +57,7 @@ class MyClient(discord.Client):
     key_suffix = f'?api_key={api_key}'
 
     async def on_ready(self):
-        await client.change_presence(activity=discord.Game('DOTA 2'))
+        await client.change_presence(activity=discord.Game('!dota to start'))
         print('Logged in as')
         print(self.user.name)
         print(self.user.id)
@@ -102,59 +102,61 @@ class MyClient(discord.Client):
                 duration = int(f"{response[0]['duration']}")
                 general = f""" Time: {time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(response[0]['start_time']))}
                                Duration: {int(duration/60)}:{duration%60}, Party Size: {response[0]['party_size']}
-                               Hero: {heroes[str(response[0]['hero_id'])]['localized_name']}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}
-                               Lane: {response[0]['lane']}, Role: {response[0]['lane_role']}, Roam: {response[0]['is_roaming']}"""
+                               Hero: {heroes[str(response[0]['hero_id'])]['localized_name']}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}"""
 
                 # the message to be sent
                 # randomizing the embed color
                 c = random.randint(0, 0xFFFFFF)
                 embedVar = discord.Embed(title=f"{response[0]['match_id']}", description=general, color=c)
 
-                await message.channel.send(embed=embedVar)
+                # 1 API CALL HERE
+                endpoint = f'/matches/{match_id}'
+                url = self.api_url + endpoint + self.key_suffix
+                response = json.loads(requests.get(url).text)
 
-                if '+' in message.content:
-                    # 1 API CALL HERE
-                    endpoint = f'/matches/{match_id}'
-                    url = self.api_url + endpoint + self.key_suffix
-                    response = json.loads(requests.get(url).text)
+                # match text field
+                # if match is won, stomp and comback are available, else throw and loss.
+                game = ""
 
-                    # match text field
+                try:
                     game = f""" Radiant Gold adv: {response['radiant_gold_adv'][-1]}, Radiant XP adv: {response['radiant_xp_adv'][-1]}
-                               Stomp: {response['stomp']}, Comeback: {response['comeback']}
-                            """
+                            Stomp: {response['stomp']}, Comeback: {response['comeback']}
+                        """
+                except KeyError:
+                    game = f""" Radiant Gold adv: {response['radiant_gold_adv'][-1]}, Radiant XP adv: {response['radiant_xp_adv'][-1]}
+                            Throw (gold): {response['throw']}
+                        """
 
-                    # the message to be sent
-                    embedVar = discord.Embed(title="Match Information", description=game, color=c)
+                # adding on the match text as an additional field
+                embedVar.add_field(name="Match Information", value=game, inline=False)
 
-                    # sending the first message
-                    await message.channel.send(embed=embedVar)
+                p = -1
+                for person in response['players']:
+                    if person['player_slot'] == p_slot:
+                        p = person
 
-                    p = -1
-                    for person in response['players']:
-                        if person['player_slot'] == p_slot:
-                            p = person
+                # player text field
+                player = f""" Camps Stacked: {p['camps_stacked']}
+                              Hero Dmg: {p['hero_damage']}, Hero Heals: {p['hero_healing']}
+                              Max Hero Dmg: {p['max_hero_hit']['value']}
+                              From: {p['max_hero_hit']['inflictor']}
+                              To: {p['max_hero_hit']['key']}
+                              Tower Dmg: {p['tower_damage']}
+                              Dmg Taken: {sum(p['damage_taken'].values())}
+                              Last Hits: {p['last_hits']}, Denies: {p['denies']}
+                              Neutral Kills: {p['neutral_kills']}, Courier Kills: {p['courier_kills']}
+                              Net Worth: {p['net_worth']}, GPM: {p['gold_per_min']}, XPM: {p['xp_per_min']}
+                              Level: {p['level']}
+                              Wards: {p['obs_placed']}, Dewards: {p['observer_kills']}
+                              Sentries: {p['sen_placed']}, Desents: {p['sentry_kills']}
+                              Runes: {p['rune_pickups']}
+                              APM: {p['actions_per_min']}
+                              Pings: {p['pings']}"""
 
-                    # player text field
-                    player = f""" Camps Stacked: {p['camps_stacked']}
-                                 Hero Dmg: {p['hero_damage']}, Hero Heals: {p['hero_healing']}
-                                 Max Hero Dmg: {p['max_hero_hit']['value']}
-                                 From: {p['max_hero_hit']['inflictor']}
-                                 To: {p['max_hero_hit']['key']}
-                                 Tower Dmg: {p['tower_damage']}
-                                 Dmg Taken: {sum(p['damage_taken'].values())}
-                                 Last Hits: {p['last_hits']}, Denies: {p['denies']}
-                                 Neutral Kills: {p['neutral_kills']}, Courier Kills: {p['courier_kills']}
-                                 Net Worth: {p['net_worth']}, GPM: {p['gold_per_min']}, XPM: {p['xp_per_min']}
-                                 Level: {p['level']}
-                                 Wards: {p['obs_placed']}, Dewards: {p['observer_kills']}
-                                 Sentries: {p['sen_placed']}, Desents: {p['sentry_kills']}
-                                 Runes: {p['rune_pickups']}
-                                 APM: {p['actions_per_min']}
-                                 Pings: {p['pings']}"""
-
-                    # sending the second message
-                    embedVar = discord.Embed(title="Player Details", description=player, color=c)
-                    await message.channel.send(embed=embedVar)
+                # adding on the player text as an additional field
+                embedVar.add_field(name="Match Information", value=player, inline=False)
+                await message.channel.send(embed=embedVar)
+        # end of !lastMatch command
 
 
 client = MyClient()
