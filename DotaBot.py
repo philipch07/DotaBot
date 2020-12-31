@@ -123,13 +123,19 @@ class MyClient(discord.Client):
                 url = self.api_url + endpoint + self.key_suffix
                 response = json.loads(requests.get(url).text)
 
-                p_slot = response[0]['player_slot']
+                # if the set steamID doesn't work, p_slot will not be found properly.
+                try:
+                    p_slot = response[0]['player_slot']
+                except KeyError:
+                    err_msg = "There was an error trying to find you in your last match. Please use !checkUser to confirm your steamID."
+                    await message.channel.send(err_msg)
+
                 match_id = response[0]['match_id']
 
                 # general text field
                 duration = int(f"{response[0]['duration']}")
                 dur = f"{int(duration/60)}:{duration%60}"
-                general = f""" Time: {convertTime(response[0]['start_time'])}
+                general = f""" Time: {convertTime(response[0]['start_time'])} UTC-0
                                Duration: {dur}, Party Size: {response[0]['party_size']}
                                {getHero(response[0]['hero_id'])}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}"""
 
@@ -146,16 +152,28 @@ class MyClient(discord.Client):
                 response = json.loads(requests.get(url).text)
 
                 # match text field
+                # change gold/xp advantage according to team
+                gold_adv = "Radiant Gold adv: "
+                xp_adv = "Radiant XP adv: "
+
+                if response['radiant_gold_adv'][-1] < 0:
+                    gold_adv = "Dire Gold adv: "
+                if response['radiant_xp_adv'][-1] < 0:
+                    xp_adv = "Dire XP adv: "
+
                 # if match is won, stomp and comback are available, else throw and loss.
                 game = ""
 
+                # note the trailing spaces are used to avoid people from guessing a win/loss from the size of the spoiler in discord
                 try:
-                    game = f""" Radiant Gold adv: {response['radiant_gold_adv'][-1]}, Radiant XP adv: {response['radiant_xp_adv'][-1]}
-                            Stomp: {response['stomp']}, Comeback: {response['comeback']}
+                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||Win||
+                            ||`Stomp: {response['stomp']}, Comeback: {response['comeback']}       `||
                         """
                 except KeyError:
-                    game = f""" Radiant Gold adv: {response['radiant_gold_adv'][-1]}, Radiant XP adv: {response['radiant_xp_adv'][-1]}
-                            Throw (gold): {response['throw']}
+                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||Loss||
+                            ||`Throw (gold): {response['throw']}                           `||
                         """
 
                 # adding on the match text as an additional field
