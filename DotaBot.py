@@ -46,12 +46,14 @@ def writeJsonFile(serverID, users):
     with open('users.json', 'w') as f:
         json.dump(temp, f)
 
-
-class MyClient(discord.Client):
-
     # TODO: for time rate limiting
     # lim_min = 0
     # lim_mon = 0
+
+
+class MyClient(discord.Client):
+
+
 
     api_url = 'https://api.opendota.com/api'
     key_suffix = f'?api_key={api_key}'
@@ -68,9 +70,28 @@ class MyClient(discord.Client):
         if message.author.id == self.user.id:
             return
 
-        # basically setting server/user as a global thing
+        # basically setting server/user as a global thing for easier access (PER BOT INSTANCE)
         server = str(message.guild.id)
         users = loadJsonFile(server)
+
+        # help command
+        if message.content.startswith('!dota'):
+            # randomizing the embed color
+            c = random.randint(0, 0xFFFFFF)
+
+            dota = "help"
+            setUser = "Used to set your SteamID. Make sure it matches your Dotabuff/OpenDota ID. Note that it must be set once per server."
+            lastMatch = "Provides details of your last match."
+
+            # create the embed
+            embedVar = discord.Embed(title="Commands:", color=c)
+            # Adds the commands
+            embedVar.add_field(name="!dota", value=dota, inline=False)
+            embedVar.add_field(name="!setUser", value=setUser, inline=False)
+            embedVar.add_field(name="!lastMatch", value=lastMatch, inline=False)
+
+            # sending the embed
+            await message.channel.send(embed=embedVar)
 
         # setUser command
         if message.content.startswith('!setUser'):
