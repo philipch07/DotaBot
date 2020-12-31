@@ -51,10 +51,12 @@ def writeJsonFile(serverID, users):
     # lim_mon = 0
 
 
+# converts time from epoch/unix time
+def convertTime(epoch):
+    return f"{time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(epoch))}"
+
+
 class MyClient(discord.Client):
-
-
-
     api_url = 'https://api.opendota.com/api'
     key_suffix = f'?api_key={api_key}'
 
@@ -121,7 +123,7 @@ class MyClient(discord.Client):
                 # general text field
                 # TODO: change the hero jawn to a function instead
                 duration = int(f"{response[0]['duration']}")
-                general = f""" Time: {time.strftime('%m-%d-%Y %H:%M:%S', time.localtime(response[0]['start_time']))}
+                general = f""" Time: {convertTime(response[0]['start_time'])}
                                Duration: {int(duration/60)}:{duration%60}, Party Size: {response[0]['party_size']}
                                Hero: {heroes[str(response[0]['hero_id'])]['localized_name']}, {response[0]['kills']}/{response[0]['deaths']}/{response[0]['assists']}"""
 
