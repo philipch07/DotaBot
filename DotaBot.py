@@ -15,12 +15,12 @@ try:
         config = json.load(f)
 
     token = config['bottoken']
-    api_key = config['ODtoken']
+    # api_key = config['ODtoken']
 
     # for heroku
 except FileNotFoundError:
     token = os.environ['bottoken']
-    api_key = os.environ['ODtoken']
+    # api_key = os.environ['ODtoken']
 
 
 def loadJsonFile(serverID):
@@ -63,7 +63,7 @@ def getHero(hero_id):
 
 class MyClient(discord.Client):
     api_url = 'https://api.opendota.com/api'
-    key_suffix = f'?api_key={api_key}'
+    # key_suffix = f'?api_key={api_key}'
 
     async def on_ready(self):
         await client.change_presence(activity=discord.Game('!dota to start'))
@@ -120,7 +120,7 @@ class MyClient(discord.Client):
                 # 1 API CALL HERE #
                 ###################
                 endpoint = f'/players/{steam_id}/recentMatches'
-                url = self.api_url + endpoint + self.key_suffix
+                url = self.api_url + endpoint  # + self.key_suffix
                 response = json.loads(requests.get(url).text)
 
                 # if the set steamID doesn't work, p_slot will not be found properly.
@@ -129,6 +129,7 @@ class MyClient(discord.Client):
                 except KeyError:
                     err_msg = "There was an error trying to find you in your last match. Please use !checkUser to confirm your steamID."
                     await message.channel.send(err_msg)
+                    return
 
                 match_id = response[0]['match_id']
 
@@ -144,11 +145,27 @@ class MyClient(discord.Client):
                 c = random.randint(0, 0xFFFFFF)
                 embedVar = discord.Embed(title=f"{response[0]['match_id']}", description=general, color=c)
 
+                # determining win/loss
+                wl = False
+                rw = bool(response[0]['radiant_win'])
+                # determining if the player is radiant/dire
+                rad = False
+                if 0 <= p_slot <= 127 and rw:
+                    rad = True
+                    wl = True
+                elif 0 <= p_slot <= 127 and not rw:
+                    rad = True
+                    wl = False
+                elif 128 <= p_slot <= 255 and rw:
+                    wl = False
+                else:
+                    wl = True
+
                 ###################
                 # 1 API CALL HERE #
                 ###################
                 endpoint = f'/matches/{match_id}'
-                url = self.api_url + endpoint + self.key_suffix
+                url = self.api_url + endpoint  # + self.key_suffix
                 response = json.loads(requests.get(url).text)
 
                 # match text field
@@ -165,16 +182,44 @@ class MyClient(discord.Client):
                 game = ""
 
                 # note the trailing spaces are used to avoid people from guessing a win/loss from the size of the spoiler in discord
-                try:
-                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||Win||
-                            ||`Stomp: {response['stomp']}, Comeback: {response['comeback']}       `||
+                # player won and on radiant
+                if rw and wl:
+                    # if no comeback was made, let the string say N/A
+                    if int(response['throw']) == 0:
+                        game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||{wl}||
+                            ||`Stomp: {response['loss']}, Comeback: N/A            `||
                         """
-                except KeyError:
-                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||Loss||
-                            ||`Throw (gold): {response['throw']}                           `||
+                    else:
+                        game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||{wl}||
+                            ||`Stomp: {response['loss']}, Comeback: {response['throw']}            `||
                         """
+                # if player lost and on radiant
+                elif not(rw and wl):
+                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                        Win/Loss: ||{wl}||
+                        ||`Min enemy gold lead (throw): {response['comeback']}, Max enemy gold lead: {response['stomp']}`||
+                    """
+                # if player won and on dire
+                elif not (rw) and wl:
+                    # if no comeback was made, let the string say N/A
+                    if int(response['throw']) == 0:
+                        game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||{wl}||
+                            ||`Stomp: {response['loss']}, Comeback: N/A            `||
+                        """
+                    else:
+                        game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                            Win/Loss: ||{wl}||
+                            ||`Stomp: {response['loss']}, Comeback: {response['throw']}            `||
+                        """
+                # if player lost and on dire
+                elif rw and not wl:
+                    game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
+                        Win/Loss: ||{wl}||
+                        ||`Min enemy gold lead (throw): {response['throw']}, Max enemy gold lead: {response['loss']}`||
+                    """
 
                 # adding on the match text as an additional field
                 embedVar.add_field(name="Match Information", value=game, inline=False)
