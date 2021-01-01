@@ -184,40 +184,44 @@ class MyClient(discord.Client):
                 # note the trailing spaces are used to avoid people from guessing a win/loss from the size of the spoiler in discord
                 # player won and on radiant
                 if rw and wl:
+                    print(1)
                     # if no comeback was made, let the string say N/A
                     if int(response['throw']) == 0:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||{wl}||
+                            Win/Loss: ||Win||
                             ||`Stomp: {response['loss']}, Comeback: N/A            `||
                         """
                     else:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||{wl}||
+                            Win/Loss: ||Win||
                             ||`Stomp: {response['loss']}, Comeback: {response['throw']}            `||
                         """
                 # if player lost and on radiant
-                elif not(rw and wl):
+                elif (not rw) and (not wl):
+                    print(2)
                     game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                        Win/Loss: ||{wl}||
+                        Win/Loss: ||Loss||
                         ||`Min enemy gold lead (throw): {response['comeback']}, Max enemy gold lead: {response['stomp']}`||
                     """
                 # if player won and on dire
-                elif not (rw) and wl:
+                elif (not rw) and wl:
+                    print(3)
                     # if no comeback was made, let the string say N/A
-                    if int(response['throw']) == 0:
+                    if int(response['comeback']) == 0:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||{wl}||
-                            ||`Stomp: {response['loss']}, Comeback: N/A            `||
+                            Win/Loss: ||Win||
+                            ||`Stomp: {response['stomp']}, Comeback: N/A            `||
                         """
                     else:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                            Win/Loss: ||{wl}||
-                            ||`Stomp: {response['loss']}, Comeback: {response['throw']}            `||
+                            Win/Loss: ||Win||
+                            ||`Stomp: {response['stomp']}, Comeback: {response['comeback']}            `||
                         """
                 # if player lost and on dire
                 elif rw and not wl:
+                    print(4)
                     game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
-                        Win/Loss: ||{wl}||
+                        Win/Loss: ||Loss||
                         ||`Min enemy gold lead (throw): {response['throw']}, Max enemy gold lead: {response['loss']}`||
                     """
 
