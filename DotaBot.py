@@ -46,10 +46,6 @@ def writeJsonFile(serverID, users):
     with open('users.json', 'w') as f:
         json.dump(temp, f)
 
-# rate limit not necessary on opendota's free api.
-# lim_min = 0
-# lim_mon = 0
-
 
 # converts time from epoch/unix time
 def convertTime(epoch):
