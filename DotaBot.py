@@ -46,7 +46,7 @@ def writeJsonFile(serverID, users):
     with open('users.json', 'w') as f:
         json.dump(temp, f)
 
-# TODO: for time rate limiting
+# rate limit not necessary on opendota's free api.
 # lim_min = 0
 # lim_mon = 0
 
@@ -67,10 +67,7 @@ class MyClient(discord.Client):
 
     async def on_ready(self):
         await client.change_presence(activity=discord.Game('!dota to start'))
-        print('Logged in as')
-        print(self.user.name)
-        print(self.user.id)
-        print('------')
+        print('Logged in.')
 
     async def on_message(self, message):
         # we do not want the bot to reply to itself
@@ -87,13 +84,16 @@ class MyClient(discord.Client):
             c = random.randint(0, 0xFFFFFF)
 
             # decription of the commands
-            setUser = "Used to set your SteamID. Make sure it matches your Dotabuff/OpenDota ID. Note that it must be set once per server."
+            setUser = """Used to set your SteamID. Make sure it matches your Dotabuff/OpenDota ID.
+                         Note that it must be set once per server or if the bot restarts."""
+            checkUser = "Used to check your SteamID. Make sure it matches your Dotabuff/OpenDota ID."
             lastMatch = "Provides details of your last match."
 
             # create the embed
             embedVar = discord.Embed(title="Commands:", color=c)
             # Adds the commands
             embedVar.add_field(name="!setUser", value=setUser, inline=False)
+            embedVar.add_field(name="!checkUser", value=checkUser, inline=False)
             embedVar.add_field(name="!lastMatch", value=lastMatch, inline=False)
 
             # sending the embed
@@ -104,7 +104,12 @@ class MyClient(discord.Client):
             words = message.content.split(' ')
             users[str(message.author.id)] = words[1]
             writeJsonFile(server, users)
-            await message.channel.send(f'{message.author.mention} has their steamID stored as: ' + words[1])
+            await message.channel.send(f'{message.author.mention} has their steamID now stored as: ' + words[1])
+
+        # checkUser command
+        elif message.content.startswith('!checkUser'):
+            id = users.get(str(message.author.id))
+            await message.channel.send(f'{message.author.mention} currently has their steamID stored as: ' + id)
 
         # printUsers for debug
         elif message.content.startswith('!printUsers'):
@@ -149,12 +154,9 @@ class MyClient(discord.Client):
                 wl = False
                 rw = bool(response[0]['radiant_win'])
                 # determining if the player is radiant/dire
-                rad = False
                 if 0 <= p_slot <= 127 and rw:
-                    rad = True
                     wl = True
                 elif 0 <= p_slot <= 127 and not rw:
-                    rad = True
                     wl = False
                 elif 128 <= p_slot <= 255 and rw:
                     wl = False
@@ -184,7 +186,6 @@ class MyClient(discord.Client):
                 # note the trailing spaces are used to avoid people from guessing a win/loss from the size of the spoiler in discord
                 # player won and on radiant
                 if rw and wl:
-                    print(1)
                     # if no comeback was made, let the string say N/A
                     if int(response['throw']) == 0:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
@@ -198,14 +199,12 @@ class MyClient(discord.Client):
                         """
                 # if player lost and on radiant
                 elif (not rw) and (not wl):
-                    print(2)
                     game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
                         Win/Loss: ||Loss||
                         ||`Min enemy gold lead (throw): {response['comeback']}, Max enemy gold lead: {response['stomp']}`||
                     """
                 # if player won and on dire
                 elif (not rw) and wl:
-                    print(3)
                     # if no comeback was made, let the string say N/A
                     if int(response['comeback']) == 0:
                         game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
@@ -219,7 +218,6 @@ class MyClient(discord.Client):
                         """
                 # if player lost and on dire
                 elif rw and not wl:
-                    print(4)
                     game = f""" {gold_adv} {abs(response['radiant_gold_adv'][-1])}, {xp_adv} {abs(response['radiant_xp_adv'][-1])}
                         Win/Loss: ||Loss||
                         ||`Min enemy gold lead (throw): {response['throw']}, Max enemy gold lead: {response['loss']}`||
